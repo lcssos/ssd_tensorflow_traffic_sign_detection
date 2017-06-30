@@ -164,6 +164,7 @@ def generate_output(input_files, mode):
             print('Demo mode: Running inference on images in sample_images/')
             image_files = os.listdir('sample_images/')
 
+            print("-" * 30)
             for image_file in image_files:
                 print('Running inference on sample_images/%s' % image_file)
                 # image_orig = np.asarray(Image.open('sample_images/' + image_file))
