@@ -48,12 +48,9 @@ def ModelHelper(y_pred_conf, y_pred_loc):
     num_total_preds_loc = num_total_preds * 4
 
     # Input tensors
-    y_true_conf = tf.placeholder(tf.int32, [None, num_total_preds],
-                                 name='y_true_conf')  # classification ground-truth labels
-    y_true_loc = tf.placeholder(tf.float32, [None, num_total_preds_loc],
-                                name='y_true_loc')  # localization ground-truth labels
-    conf_loss_mask = tf.placeholder(tf.float32, [None, num_total_preds],
-                                    name='conf_loss_mask')  # 1 mask "bit" per def. box
+    y_true_conf = tf.placeholder(tf.int32, [None, num_total_preds], name='y_true_conf')  # classification ground-truth labels
+    y_true_loc = tf.placeholder(tf.float32, [None, num_total_preds_loc], name='y_true_loc')  # localization ground-truth labels
+    conf_loss_mask = tf.placeholder(tf.float32, [None, num_total_preds], name='conf_loss_mask')  # 1 mask "bit" per def. box
 
     # Confidence loss
     logits = tf.reshape(y_pred_conf, [-1, num_total_preds, NUM_CLASSES])
@@ -70,11 +67,9 @@ def ModelHelper(y_pred_conf, y_pred_loc):
     smooth_l1_condition = tf.less(tf.abs(diff), 1.0)
     loc_loss = tf.where(smooth_l1_condition, loc_loss_l2, loc_loss_l1)
 
-    loc_loss_mask = tf.minimum(y_true_conf,
-                               1)  # have non-zero localization loss only where we have matching ground-truth box
+    loc_loss_mask = tf.minimum(y_true_conf, 1)  # have non-zero localization loss only where we have matching ground-truth box
     loc_loss_mask = tf.to_float(loc_loss_mask)
-    loc_loss_mask = tf.stack([loc_loss_mask] * 4,
-                             axis=2)  # [0, 1, 1] -> [[[0, 0, 0, 0], [1, 1, 1, 1], [1, 1, 1, 1]], ...]
+    loc_loss_mask = tf.stack([loc_loss_mask] * 4, axis=2)  # [0, 1, 1] -> [[[0, 0, 0, 0], [1, 1, 1, 1], [1, 1, 1, 1]], ...]
     loc_loss_mask = tf.reshape(loc_loss_mask, [-1, num_total_preds_loc])  # removing the inner-most dimension of above
     loc_loss = loc_loss_mask * loc_loss
     loc_loss = tf.reduce_sum(loc_loss)
