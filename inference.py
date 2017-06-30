@@ -18,7 +18,9 @@ import matplotlib.pyplot as plt
 from moviepy.editor import VideoFileClip
 from optparse import OptionParser
 import glob
+import logging
 
+logging.getLogger().setLevel(logging.INFO)
 
 def run_inference(image, model, sess, mode, sign_map):
     """
@@ -34,10 +36,11 @@ def run_inference(image, model, sess, mode, sign_map):
 		* Numpy array representing annotated image
 	"""
     # Save original image in memory
-    image = np.array(image)
-    image_orig = np.copy(image)
+    image = np.asarray(image)
+    image_orig = np.copy(image)     # 原始图像
 
     # Get relevant tensors
+    # 获取相关Tensor
     x = model['x']
     is_training = model['is_training']
     preds_conf = model['preds_conf']
@@ -45,23 +48,25 @@ def run_inference(image, model, sess, mode, sign_map):
     probs = model['probs']
 
     # Convert image to PIL Image, resize it, convert to grayscale (if necessary), convert back to numpy array
-    image = Image.fromarray(image)
+    image = Image.fromarray(image)          # 将图像矩阵，转为图像对象
     orig_w, orig_h = image.size
+    logging.info("原始图像的宽：{:d}，高：{:d}".format(orig_w,orig_h))
+    # 灰度图
     if NUM_CHANNELS == 1:
         image = image.convert('L')  # 8-bit grayscale
     image = image.resize((IMG_W, IMG_H), Image.LANCZOS)  # high-quality downsampling filter
-    image = np.asarray(image)
+    logging.info("处理后的图像：{}".format(image.size))
+    image = np.asarray(image)               # 将图像转为矩阵
 
-    images = np.array([image])  # create a "batch" of 1 image
+    images = np.array([image])  # create a "batch" of 1 image   #创建包含一个图像的批次矩阵
     if NUM_CHANNELS == 1:
-        images = np.expand_dims(images, axis=-1)  # need extra dimension of size 1 for grayscale
+        images = np.expand_dims(images, axis=-1)  # need extra dimension of size 1 for grayscale        # 增加一个灰度的额外维度？？？
 
     # Perform object detection
-    t0 = time.time()  # keep track of duration of object detection + NMS
-    preds_conf_val, preds_loc_val, probs_val = sess.run([preds_conf, preds_loc, probs],
-                                                        feed_dict={x: images, is_training: False})
+    t0 = time.time()  # keep track of duration of object detection + NMS        # 开始处理前的时间
+    preds_conf_val, preds_loc_val, probs_val = sess.run([preds_conf, preds_loc, probs], feed_dict={x: images, is_training: False})
     if mode != 'video':
-        print('Inference took %.1f ms (%.2f fps)' % ((time.time() - t0) * 1000, 1 / (time.time() - t0)))
+        logging.info('图像识别花费时间 %.1f ms (%.2f fps)' % ((time.time() - t0) * 1000, 1 / (time.time() - t0)))
 
     # Gather class predictions and confidence values
     y_pred_conf = preds_conf_val[0]  # batch size of 1, so just take [0]
@@ -73,14 +78,17 @@ def run_inference(image, model, sess, mode, sign_map):
 
     # Perform NMS
     boxes = nms(y_pred_conf, y_pred_loc, prob)
+    # logging.info("标注矩形：{}".format(boxes))
     if mode != 'video':
-        print('Inference + NMS took %.1f ms (%.2f fps)' % ((time.time() - t0) * 1000, 1 / (time.time() - t0)))
+        logging.info('Inference + NMS took %.1f ms (%.2f fps)' % ((time.time() - t0) * 1000, 1 / (time.time() - t0)))
 
     # Rescale boxes' coordinates back to original image's dimensions
     # Recall boxes = [[x1, y1, x2, y2, cls, cls_prob], [...], ...]
+    # 将标注矩形框位置按缩放比例恢复
     scale = np.array([orig_w / IMG_W, orig_h / IMG_H, orig_w / IMG_W, orig_h / IMG_H])
     if len(boxes) > 0:
         boxes[:, :4] = boxes[:, :4] * scale
+    # logging.info("标注矩形2：{}".format(boxes))
 
     # Draw and annotate boxes over original image, and return annotated image
     image = image_orig
@@ -110,6 +118,7 @@ def generate_output(input_files, mode):
             sign_id, sign_name = line.split(',')
             sign_map[int(sign_id)] = sign_name
     sign_map[0] = 'background'  # class ID 0 reserved for background class
+    logging.info(sign_map)
 
     # Create output directory 'inference_out/' if needed
     if mode == 'image' or mode == 'video':
@@ -124,10 +133,11 @@ def generate_output(input_files, mode):
     with tf.Graph().as_default(), tf.Session() as sess:
         # "Instantiate" neural network, get relevant tensors
         model = SSDModel()
+        # logging.info(model)
 
         # Load trained model
         saver = tf.train.Saver()
-        print('Restoring previously trained model at %s' % MODEL_SAVE_PATH)
+        logging.critical('开始加载已训练模型 %s' % MODEL_SAVE_PATH)
         saver.restore(sess, MODEL_SAVE_PATH)
 
         if mode == 'image':
@@ -138,7 +148,7 @@ def generate_output(input_files, mode):
 
                 head, tail = os.path.split(image_file)
                 plt.imsave('./inference_out/%s' % tail, image)
-            print('Output saved in inference_out/')
+            print('输出文件保存至 inference_out/ 目录')
 
         elif mode == 'video':
             for video_file in input_files:
@@ -156,10 +166,12 @@ def generate_output(input_files, mode):
 
             for image_file in image_files:
                 print('Running inference on sample_images/%s' % image_file)
-                image_orig = np.asarray(Image.open('sample_images/' + image_file))
+                # image_orig = np.asarray(Image.open('sample_images/' + image_file))
+                image_orig = Image.open('sample_images/' + image_file)
                 image = run_inference(image_orig, model, sess, mode, sign_map)
                 plt.imshow(image)
                 plt.show()
+                print("-"*30)
 
         else:
             raise ValueError('Invalid mode: %s' % mode)

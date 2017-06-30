@@ -76,7 +76,7 @@ def ModelHelper(y_pred_conf, y_pred_loc):
 
     # Weighted average of confidence loss and localization loss
     # Also add regularization loss
-    loss = conf_loss + LOC_LOSS_WEIGHT * loc_loss + tf.reduce_sum(slim.losses.get_regularization_losses())
+    loss = conf_loss + LOC_LOSS_WEIGHT * loc_loss + tf.reduce_sum(tf.losses.get_regularization_losses())
     optimizer = OPT.minimize(loss)
 
     # reported_loss = loss #tf.reduce_sum(loss, 1)  # DEBUG
