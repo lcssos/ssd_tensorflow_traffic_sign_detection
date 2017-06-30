@@ -48,4 +48,4 @@ NUM_EPOCH = 200
 BATCH_SIZE = 32  # batch size for training (relatively small)
 VALIDATION_SIZE = 0.05  # fraction of total training set to use as validation set
 SAVE_MODEL = True  # save trained model to disk?
-MODEL_SAVE_PATH = './model.ckpt'  # where to save trained model
+MODEL_SAVE_PATH = './model/model.ckpt'  # where to save trained model
