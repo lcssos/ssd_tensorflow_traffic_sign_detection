@@ -100,7 +100,7 @@ def run_inference(image, model, sess, mode, sign_map):
 
         # Annotate image
         image = cv2.rectangle(image, tuple(box_coords[:2]), tuple(box_coords[2:]), (0, 255, 0))
-        label_str = '%s %.2f' % (sign_map[cls], cls_prob)
+        label_str = '%s %.3f' % (sign_map[cls], cls_prob)
         image = cv2.putText(image, label_str, (box_coords[0], box_coords[1]), 0, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
 
     return image
