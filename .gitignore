@@ -27,4 +27,6 @@ crashlytics-build.properties
 fabric.properties
 
 model/
-signDatabasePublicFramesOnly/
+*.p
+resized_images_400x260
+signDatabasePublicFramesOnly
