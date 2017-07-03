@@ -24,8 +24,10 @@ def calc_iou(box_a, box_b):
     area_box_a = (box_a[2] - box_a[0]) * (box_a[3] - box_a[1])
     area_box_b = (box_b[2] - box_b[0]) * (box_b[3] - box_b[1])
     union = area_box_a + area_box_b - intersection
-
+    if union == 0:
+        return 0
     iou = intersection / union
+    print("union:{},iou:{}".format(union,iou))
     return iou
 
 
