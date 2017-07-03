@@ -30,3 +30,7 @@ model/
 *.p
 resized_images_400x260
 signDatabasePublicFramesOnly
+__pycache__/
+data_prep_400x260.p
+data_raw_400x260.p
+loss_history.p
